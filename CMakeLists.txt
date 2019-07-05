@@ -3,7 +3,7 @@ project(DirecXPrac)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(DirecXPrac main.cpp
+add_executable(DirecXPrac WIN32 main.cpp
         include/dx10/D3D10.h
         include/dx10/D3DX10.h
         include/dx10/d3dx10async.h
