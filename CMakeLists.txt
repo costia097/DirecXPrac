@@ -11,6 +11,7 @@ add_executable(DirecXPrac WIN32 main.cpp
         include/dx10/D3DX10tex.h
         include/dx10/D3DX10core.h
         include/dx10/D3DX10mesh.h
+        include/dx10/D3DX10math.inl
 
         include/dx11/D3D11.h
         include/dx11/D3DX11.h
