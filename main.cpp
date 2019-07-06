@@ -10,6 +10,10 @@
 #pragma comment (lib, "d3dx11.lib")
 #pragma comment (lib, "d3dx10.lib")
 
+// define the screen resolution
+#define SCREEN_WIDTH  800
+#define SCREEN_HEIGHT 600
+
 IDXGISwapChain *swapChain;
 ID3D11Device *dev;
 ID3D11DeviceContext *devCon;
@@ -37,10 +41,13 @@ void InitD3D(HWND hwnd){
 
     scd.BufferCount = 1;
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    scd.BufferDesc.Height = SCREEN_HEIGHT;
+    scd.BufferDesc.Width = SCREEN_WIDTH;
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scd.OutputWindow = hwnd;
     scd.SampleDesc.Count = 4;
     scd.Windowed = true;
+    scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 
     D3D11CreateDeviceAndSwapChain(
@@ -74,8 +81,8 @@ void InitD3D(HWND hwnd){
 
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width = 800;
-    viewport.Height = 600;
+    viewport.Width = SCREEN_WIDTH;
+    viewport.Height = SCREEN_HEIGHT;
 
     devCon->RSSetViewports(1, &viewport);
 }
@@ -93,6 +100,8 @@ void RenderFrame()
 }
 
 void CleanD3D(){
+    swapChain->SetFullscreenState(FALSE, nullptr);
+
     swapChain->Release();
     backBuffer->Release();
     dev->Release();
@@ -117,12 +126,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+//    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
     wc.lpszClassName = "WindowClass";
 
     RegisterClassEx(&wc);
 
-    RECT wr = {0, 0, 800, 600};
+    RECT wr = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
     AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
     hWnd = CreateWindowEx(NULL,
