@@ -1,3 +1,4 @@
+#pragma clang diagnostic push
 #include <iostream>
 
 #include <Windows.h>
@@ -14,10 +15,24 @@
 #define SCREEN_WIDTH  800
 #define SCREEN_HEIGHT 600
 
+// global
 IDXGISwapChain *swapChain;
 ID3D11Device *dev;
 ID3D11DeviceContext *devCon;
 ID3D11RenderTargetView *backBuffer;
+
+ID3D11VertexShader *pVs;
+ID3D11PixelShader *pPs;
+
+ID3D11Buffer *pVertexBuffer;
+
+ID3D11InputLayout *pLayout;
+
+
+struct VERTEX { // NOLINT(cppcoreguidelines-pro-type-member-init)
+    FLOAT X, Y, Z;
+    D3DXCOLOR Color;
+};
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "hicpp-multiway-paths-covered"
@@ -33,6 +48,77 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     return DefWindowProc (hWnd, message, wParam, lParam);
 }
 #pragma clang diagnostic pop
+
+void InitPipeline(){
+    // load and compile the two shaders
+    ID3D10Blob *vs, *ps;
+    D3DX11CompileFromFileA(
+            R"(C:\Users\Kostia Yeriomin\CLionProjects\DirecXPrac\shaders\shader.shader)",
+            nullptr,
+            nullptr,
+            "VShader",
+            "vs_4_0",
+            0,
+            0,
+            nullptr,
+            &vs,
+            nullptr,
+            nullptr);
+    D3DX11CompileFromFileA(
+            R"(C:\Users\Kostia Yeriomin\CLionProjects\DirecXPrac\shaders\shader.shader)",
+            nullptr,
+            nullptr,
+            "PShader",
+            "ps_4_0",
+            0,
+            0,
+            nullptr,
+            &ps,
+            nullptr,
+            nullptr);
+
+    // encapsulate both shaders into shader objects
+    dev->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, &pVs);
+    dev->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, &pPs);
+
+    // set the shader objects
+    devCon->VSSetShader(pVs, nullptr, 0);
+    devCon->PSSetShader(pPs, nullptr, 0);
+
+    // create the input layout object
+    D3D11_INPUT_ELEMENT_DESC ied[] = {
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+    };
+
+    dev->CreateInputLayout(ied, 2, vs->GetBufferPointer(), vs->GetBufferSize(), &pLayout);
+    devCon->IASetInputLayout(pLayout);
+}
+
+void InitGraphics(){
+    // create a triangle using the VERTEX struct
+    VERTEX ourVertices[] = {
+            {0.0f, 0.5f, 0.0f, D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f)},
+            {0.45f, -0.5, 0.0f, D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f)},
+            {-0.45f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f)}
+    };
+
+    // create the vertex buffer
+    D3D11_BUFFER_DESC bd;
+    ZeroMemory(&bd, sizeof(bd));
+
+    bd.Usage = D3D11_USAGE_DYNAMIC; // write access access by CPU and GPU
+    bd.ByteWidth = sizeof(VERTEX) * 3; // size is the VERTEX struct * 3
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // use as a vertex buffer
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // allow CPU to write in buffer
+    dev->CreateBuffer(&bd, nullptr, &pVertexBuffer); // create the buffer
+
+    // copy the vertices into the buffer
+    D3D11_MAPPED_SUBRESOURCE ms;
+    devCon->Map(pVertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+    memcpy(ms.pData, &ourVertices, sizeof(ourVertices));
+    devCon->Unmap(pVertexBuffer, NULL);
+}
 
 void InitD3D(HWND hwnd){
     DXGI_SWAP_CHAIN_DESC scd;
@@ -85,6 +171,9 @@ void InitD3D(HWND hwnd){
     viewport.Height = SCREEN_HEIGHT;
 
     devCon->RSSetViewports(1, &viewport);
+
+    InitPipeline();
+    InitGraphics();
 }
 
 // this is the function used to render a single frame
@@ -95,6 +184,17 @@ void RenderFrame()
 
     // do 3D rendering on the back buffer here
 
+    // select which vertex buffer to display
+    UINT stride = sizeof(VERTEX);
+    UINT offset = 0;
+    devCon->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
+
+    // select which primtive type we are using
+    devCon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // draw the vertex buffer to the back buffer
+    devCon->Draw(3, 0);
+
     // switch the back buffer and the front buffer
     swapChain->Present(0, 0);
 }
@@ -102,6 +202,11 @@ void RenderFrame()
 void CleanD3D(){
     swapChain->SetFullscreenState(FALSE, nullptr);
 
+    // close and release all existing COM objects
+    pVs->Release();
+    pPs->Release();
+    pVertexBuffer->Release();
+    pLayout->Release();
     swapChain->Release();
     backBuffer->Release();
     dev->Release();
