@@ -3,9 +3,12 @@
 
 #include <Windows.h>
 
-#include "include/dx11/D3D11.h"
-#include "include/dx11/D3DX11.h"
-#include "include/dx10/D3DX10math.h"
+#include "../include/libs/dx11/D3D11.h"
+#include "../include/libs/dx11/D3DX11.h"
+#include "../include/libs/dx10/D3DX10math.h"
+#include "../include/Platform.h"
+#include <thread>
+#include <chrono>
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
@@ -32,6 +35,24 @@ ID3D11InputLayout *pLayout;
 struct VERTEX { // NOLINT(cppcoreguidelines-pro-type-member-init)
     FLOAT X, Y, Z;
     D3DXCOLOR Color;
+};
+
+struct FDrawUpData
+{
+    uint32 NumPrimitives{};
+    uint32 NumVertices{};
+    uint32 VertexDataStride{};
+    void* OutVertexData;
+    uint32 MinVertexIndex{};
+    uint32 NumIndices{};
+    uint32 IndexDataStride{};
+    void* OutIndexData;
+
+    FDrawUpData()
+            : OutVertexData(nullptr)
+            , OutIndexData(nullptr)
+    {
+    }
 };
 
 #pragma clang diagnostic push
@@ -275,6 +296,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
             // ...
             // ...
         }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
 
     // clean up DirectX and COM

@@ -42,12 +42,12 @@
 
 
 // Includes
-#include "d3d10.h"
+#include "D3D10.h"
 #include "D3DX10.h"
-#include "d3dx10math.h"
+#include "D3DX10math.h"
 #include "D3DX10core.h"
 #include "D3DX10tex.h"
-#include "d3dx10mesh.h"
+#include "D3DX10mesh.h"
 #include "d3dx10async.h"
 
 
